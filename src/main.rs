@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // TODO Limited number of bookmarks listed, can be overriden with option
     // TODO Retroactively tag an existing bookmark (by ID or URL)
     // TODO Delete a bookmark (by ID or URL)
-    // TODO Export bookmarks
+    // TODO Export bookmarks in a form that browsers can ingest
     // TODO Specify location of DB file
 
     let database: &str;

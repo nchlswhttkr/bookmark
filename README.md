@@ -1,6 +1,8 @@
 # bookmark
 
-You'll need to have SQLite3 installed. Bookmarks are saved to `~/.bookmarks/bookmarks.db`
+Save bookmarks from the command line.
+
+You'll need to have SQLite3 installed. Bookmarks are saved to `~/.bookmarks/bookmarks.db`.
 
 ```sh
 cargo build
