@@ -64,6 +64,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let conn: SqliteConnection = SqliteConnection::establish(database)?;
+    // https://sqlite.org/foreignkeys.html#fk_enable
+    conn.execute("PRAGMA foreign_keys = ON;")?;
+
     embedded_migrations::run(&conn)?;
 
     if let Some(matches) = matches.subcommand_matches("add") {
