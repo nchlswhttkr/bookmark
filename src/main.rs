@@ -14,6 +14,7 @@ use clap::{App, Arg, SubCommand};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use self::diesel::prelude::*;
 use self::models::*;
@@ -42,11 +43,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         )
         .subcommand(SubCommand::with_name("list"))
+        .subcommand(
+            SubCommand::with_name("delete")
+                .about("Delete a bookmark")
+                .arg(
+                    Arg::with_name("target")
+                        .help("The ID or URL of the bookmark to remove")
+                        .required(true),
+                ),
+        )
         .get_matches();
     // TODO Filter a list of bookmarks by tag
     // TODO Limited number of bookmarks listed, can be overriden with option
     // TODO Retroactively tag an existing bookmark (by ID or URL)
-    // TODO Delete a bookmark (by ID or URL)
     // TODO Export bookmarks in a form that browsers can ingest
     // TODO Specify location of DB file
 
@@ -112,6 +121,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .collect::<Vec<String>>()
                 .join(", ");
             println!("{}\t{}\t{}", result.0.id, result.0.url, taglist)
+        }
+    } else if let Some(matches) = matches.subcommand_matches("delete") {
+        let target = matches.value_of("target").unwrap();
+        if let Ok(target_as_id) = i32::from_str(target) {
+            diesel::delete(schema::bookmark::table.filter(schema::bookmark::id.eq(target_as_id)))
+                .execute(&conn)?;
+        } else {
+            diesel::delete(schema::bookmark::table.filter(schema::bookmark::url.eq(target)))
+                .execute(&conn)?;
         }
     }
     Ok(())
