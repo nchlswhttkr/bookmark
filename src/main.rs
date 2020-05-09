@@ -1,5 +1,6 @@
 // TODO Handle errors properly
 // TODO Include output, behind --verbose flag
+// TODO Integration tests, ideally across different platforms in CI
 
 #[macro_use]
 extern crate diesel;
@@ -58,6 +59,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .help("Only list bookmarks with a certain tag")
                         .long("tagged")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("no-pretty")
+                        .help("Turns off padding for pretty output")
+                        .long("no-pretty"),
                 ),
         )
         .subcommand(
@@ -154,7 +160,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .collect();
         }
 
-        // TODO Add option to choose between pretty output and parseable output
+        let mut longest_url = 0;
+        if !matches.is_present("no-pretty") {
+            for result in &results {
+                if result.0.url.len() > longest_url {
+                    longest_url = result.0.url.len();
+                }
+            }
+        }
         for result in results {
             let taglist = result
                 .1
@@ -162,7 +175,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|t| t.value.clone())
                 .collect::<Vec<String>>()
                 .join(", ");
-            println!("{}\t{}\t{}", result.0.id, result.0.url, taglist)
+            println!(
+                "{}\t{: <longest_url$}\t{}",
+                result.0.id,
+                result.0.url,
+                taglist,
+                longest_url = longest_url
+            )
         }
     } else if let Some(matches) = matches.subcommand_matches("delete") {
         let target = matches.value_of("target").unwrap();
