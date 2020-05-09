@@ -2,7 +2,9 @@
 
 Save bookmarks from the command line.
 
-You'll need to have SQLite3 installed. Bookmarks are saved to `~/.bookmark/bookmarks.db`.
+You'll probably need to have SQLite installed. Bookmarks are saved to `~/.bookmark/bookmarks.db`.
+
+If you're on Windows, bookmarks will be saved to `$APPDATA/.bookmark/bookmarks.db`. I don't regularly test against Windows, but hopefully you should be able to build and run this.
 
 ## Usage
 

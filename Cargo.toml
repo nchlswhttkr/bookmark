@@ -12,3 +12,6 @@ repository = "https://github.com/nchlswhttkr/bookmark/"
 clap =  "2.33.0"
 diesel = { version = "1.4.0", features = ["sqlite", "chrono"] }
 diesel_migrations = { version = "1.4.0", features = ["sqlite"] }
+
+[target.x86_64-pc-windows-msvc.dependencies]
+libsqlite3-sys = { version = "0.9.0", features = ["bundled"] }

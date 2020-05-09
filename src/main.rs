@@ -101,7 +101,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(value) = matches.value_of("database") {
         database = value
     } else {
-        let home = env::var("HOME")?; // TODO Make it work with Windows
+        let home;
+        if cfg!(windows) {
+            home = env::var("APPDATA")?;
+        } else {
+            home = env::var("HOME")?;
+        }
         path.push(&home);
         path.push(".bookmark");
         fs::create_dir_all(&path)?;
