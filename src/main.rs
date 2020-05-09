@@ -52,12 +52,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .required(true),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("tag")
+                .about("Add a tag to an existing bookmark")
+                .arg(
+                    Arg::with_name("target")
+                        .help("The ID or URL of the bookmark to remove")
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("tag")
+                        .help("The tag to apply to the bookmark")
+                        .required(true),
+                ),
+        )
         .get_matches();
     // TODO Filter a list of bookmarks by tag
     // TODO Limited number of bookmarks listed, can be overriden with option
-    // TODO Retroactively tag an existing bookmark (by ID or URL)
     // TODO Export bookmarks in a form that browsers can ingest
     // TODO Specify location of DB file
+    // TODO Add multiple tags to a bookmark with the tag command
 
     let database: &str;
     let mut path = PathBuf::new(); // Guess Rust wants this declared here
@@ -112,7 +126,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .grouped_by(&bookmarks);
         let results: Vec<(Bookmark, Vec<Tag>)> = bookmarks.into_iter().zip(tags).collect();
 
-        // TODO Format this output to be pretty
+        // TODO Add option to choose between pretty output and parseable output
         for result in results {
             let taglist = result
                 .1
@@ -131,6 +145,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             diesel::delete(schema::bookmark::table.filter(schema::bookmark::url.eq(target)))
                 .execute(&conn)?;
         }
+    } else if let Some(matches) = matches.subcommand_matches("tag") {
+        let tag = matches.value_of("tag").unwrap();
+        let target = matches.value_of("target").unwrap();
+        let bookmark: Bookmark;
+        if let Ok(target_as_id) = i32::from_str(target) {
+            bookmark = schema::bookmark::table
+                .filter(schema::bookmark::id.eq(target_as_id))
+                .first(&conn)?;
+        } else {
+            bookmark = schema::bookmark::table
+                .filter(schema::bookmark::url.eq(target))
+                .first(&conn)?;
+        }
+        let tag_to_insert = TagToInsert {
+            bookmark_id: bookmark.id,
+            value: String::from(tag),
+        };
+        diesel::insert_into(schema::tag::table)
+            .values(vec![tag_to_insert])
+            .execute(&conn)?;
     }
     Ok(())
 }
