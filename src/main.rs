@@ -42,7 +42,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .use_delimiter(true),
                 ),
         )
-        .subcommand(SubCommand::with_name("list"))
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("List all bookmarks and their tags")
+                .arg(
+                    Arg::with_name("tagged")
+                        .help("Only list bookmarks with a certain tag")
+                        .long("tagged")
+                        .takes_value(true),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("delete")
                 .about("Delete a bookmark")
@@ -72,6 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // TODO Export bookmarks in a form that browsers can ingest
     // TODO Specify location of DB file
     // TODO Add multiple tags to a bookmark with the tag command
+    // TODO Allow for filtering by multiple tags when listing bookmarks
 
     let database: &str;
     let mut path = PathBuf::new(); // Guess Rust wants this declared here
@@ -119,12 +129,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diesel::insert_into(schema::tag::table)
             .values(&tags)
             .execute(&conn)?;
-    } else if let Some(_) = matches.subcommand_matches("list") {
+    } else if let Some(matches) = matches.subcommand_matches("list") {
         let bookmarks = schema::bookmark::table.load::<Bookmark>(&conn)?;
         let tags = Tag::belonging_to(&bookmarks)
             .load::<Tag>(&conn)?
             .grouped_by(&bookmarks);
-        let results: Vec<(Bookmark, Vec<Tag>)> = bookmarks.into_iter().zip(tags).collect();
+        let mut results: Vec<(Bookmark, Vec<Tag>)> = bookmarks.into_iter().zip(tags).collect();
+
+        // TODO See if this can be done while querying (join bookmarks on filtered list of tags)
+        if let Some(tagged) = matches.value_of("tagged") {
+            results = results
+                .into_iter()
+                .filter(|r| match r.1.iter().find(|t| t.value == tagged) {
+                    Some(_) => true,
+                    None => false,
+                })
+                .collect();
+        }
 
         // TODO Add option to choose between pretty output and parseable output
         for result in results {
