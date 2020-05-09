@@ -2,14 +2,24 @@
 
 Save bookmarks from the command line.
 
-You'll need to have SQLite3 installed. Bookmarks are saved to `~/.bookmarks/bookmarks.db`.
+You'll need to have SQLite3 installed. Bookmarks are saved to `~/.bookmark/bookmarks.db`.
+
+## Usage
 
 ```sh
-cargo build
+# Add a bookmark
+bookmark add https://github.com/
 
-target/debug/bookmark add https://nicholas.cloud/
-target/debug/bookmark add https://youtu.be/L_XJ_s5IsQc --tags fusion,music
-target/debug/bookmark list
-# 1       https://nicholas.cloud/
-# 2       https://youtu.be/L_XJ_s5IsQc    fusion, music
+# Add a bookmark with several tags
+bookmark add https://www.youtube.com/watch?v=ElPkT5Qvzw8 --tags music,gaming
+
+# List bookmark
+bookmark list
+
+# List bookmarks with a certain tag
+bookmark list --tagged music
+
+# Delete a bookmark by its URL or its ID
+bookmark delete https://github.com/
+bookmark delete 2
 ```

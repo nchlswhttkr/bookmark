@@ -25,6 +25,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
+        .about(env!("CARGO_PKG_REPOSITORY"))
+        .arg(
+            Arg::with_name("database")
+                .help("Overrides the default database location")
+                .long("database")
+                .global(true)
+                .takes_value(true),
+        )
         .subcommand(
             SubCommand::with_name("add")
                 .about("Add a new bookmark")
@@ -76,12 +84,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         )
         .get_matches();
-    // TODO Filter a list of bookmarks by tag
     // TODO Limited number of bookmarks listed, can be overriden with option
     // TODO Export bookmarks in a form that browsers can ingest
-    // TODO Specify location of DB file
     // TODO Add multiple tags to a bookmark with the tag command
     // TODO Allow for filtering by multiple tags when listing bookmarks
+    // TODO Add command to remove tags from a bookmark
 
     let database: &str;
     let mut path = PathBuf::new(); // Guess Rust wants this declared here
@@ -90,7 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         let home = env::var("HOME")?; // TODO Make it work with Windows
         path.push(&home);
-        path.push(".bookmarks");
+        path.push(".bookmark");
         fs::create_dir_all(&path)?;
         path.push("bookmarks.db");
         database = path.to_str().unwrap();
