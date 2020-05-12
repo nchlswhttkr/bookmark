@@ -46,9 +46,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Arg::with_name("tags")
                         .help("Tags (comma-separated) for the bookmark")
                         .long("tags")
-                        .short("t")
                         .takes_value(true)
                         .use_delimiter(true),
+                )
+                .arg(
+                    Arg::with_name("name")
+                        .help("The name of the bookmark, defaults to an empty string")
+                        .long("name")
+                        .takes_value(true),
                 ),
         )
         .subcommand(
@@ -95,6 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // TODO Add multiple tags to a bookmark with the tag command
     // TODO Allow for filtering by multiple tags when listing bookmarks
     // TODO Add command to remove tags from a bookmark
+    // TODO Allow bookmarks to be renamed/retagged
 
     let database: &str;
     let mut path = PathBuf::new(); // Guess Rust wants this declared here
@@ -123,10 +129,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(matches) = matches.subcommand_matches("add") {
         // TODO Run this in a transaction
         let url = matches.value_of("url").unwrap();
-        let bookmark = BookmarkToInsert {
-            url,
-            name: None, // TODO Get title from input/HTML
-        };
+        // TODO Attempt to grab bookmark name from title metadata if not supplied
+        let name = matches.value_of("name");
+        let bookmark = BookmarkToInsert { url, name };
         diesel::insert_into(schema::bookmark::table)
             .values(&bookmark)
             .execute(&conn)?;
@@ -166,10 +171,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let mut longest_url = 0;
+        let mut longest_name = 0;
         if !matches.is_present("no-pretty") {
             for result in &results {
                 if result.0.url.len() > longest_url {
                     longest_url = result.0.url.len();
+                }
+                if result.0.name.len() > longest_name {
+                    longest_name = result.0.name.len();
                 }
             }
         }
@@ -181,10 +190,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .collect::<Vec<String>>()
                 .join(", ");
             println!(
-                "{}\t{: <longest_url$}\t{}",
+                "{}\t{: <longest_name$}\t{: <longest_url$}\t{}",
                 result.0.id,
+                result.0.name,
                 result.0.url,
                 taglist,
+                longest_name = longest_name,
                 longest_url = longest_url
             )
         }

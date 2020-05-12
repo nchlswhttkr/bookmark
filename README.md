@@ -9,11 +9,14 @@ If you're on Windows, bookmarks will be saved to `$APPDATA/.bookmark/bookmarks.d
 ## Usage
 
 ```sh
+git clone https://github.com/nchlswhttkr/bookmark/
+cargo install --path bookmark
+
 # Add a bookmark
 bookmark add https://github.com/
 
-# Add a bookmark with several tags
-bookmark add https://www.youtube.com/watch?v=ElPkT5Qvzw8 --tags music,gaming
+# Add a bookmark with a name and several tags
+bookmark add https://www.youtube.com/watch?v=ElPkT5Qvzw8 --name "Baka Mitai Cover" --tags music,gaming
 
 # List bookmark
 bookmark list
