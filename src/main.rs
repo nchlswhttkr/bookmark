@@ -16,6 +16,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::process::Command;
 use std::str::FromStr;
 
 use self::diesel::prelude::*;
@@ -38,7 +39,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .subcommand(
             SubCommand::with_name("add")
-                .about("Add a new bookmark")
+                .about(
+                    "Add a new bookmark\n\nBy default, you'll be prompted for optional name/tags",
+                )
                 .arg(
                     Arg::with_name("url")
                         .help("The destination URL to bookmark")
@@ -93,6 +96,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     Arg::with_name("tag")
                         .help("The tag to apply to the bookmark")
+                        .required(true),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("open")
+                .about("Open a bookmark in your browser")
+                .arg(
+                    Arg::with_name("target")
+                        .help("The ID or URL of the bookmark to remove")
                         .required(true),
                 ),
         )
@@ -258,6 +270,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diesel::insert_into(schema::tag::table)
             .values(vec![tag_to_insert])
             .execute(&conn)?;
+    } else if let Some(matches) = matches.subcommand_matches("open") {
+        let target = matches.value_of("target").unwrap();
+        let bookmark: Bookmark;
+        if let Ok(target_as_id) = i32::from_str(target) {
+            bookmark = schema::bookmark::table
+                .filter(schema::bookmark::id.eq(target_as_id))
+                .first(&conn)?;
+        } else {
+            bookmark = schema::bookmark::table
+                .filter(schema::bookmark::url.eq(target))
+                .first(&conn)?;
+        }
+        if cfg!(windows) {
+            Command::new("cmd")
+                .args(vec!["/C", bookmark.url.as_str()])
+                .output()?;
+        } else if cfg!(macos) {
+            Command::new("open").args(vec![bookmark.url]).output()?;
+        } else if cfg!(linux) {
+            Command::new("xdg-open").args(vec![bookmark.url]).output()?;
+        } else {
+            eprintln!("Could not open link in your browser")
+        }
     }
     Ok(())
 }
