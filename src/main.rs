@@ -11,9 +11,10 @@ extern crate clap;
 mod models;
 mod schema;
 
-use clap::{App, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 use std::env;
 use std::fs;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -27,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
         .about(env!("CARGO_PKG_REPOSITORY"))
+        .setting(AppSettings::ArgRequiredElseHelp)
         .arg(
             Arg::with_name("database")
                 .help("Overrides the default database location")
@@ -130,7 +132,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // TODO Run this in a transaction
         let url = matches.value_of("url").unwrap();
         // TODO Attempt to grab bookmark name from title metadata if not supplied
-        let name = matches.value_of("name");
+        let mut name = matches.value_of("name");
+        let mut name_input: String = String::new(); // Could better manage lifetimes
+        if name.is_none() {
+            io::stdout().write(b"Name?\t")?;
+            io::stdout().flush()?;
+            io::stdin().read_line(&mut name_input)?;
+            name = Some(name_input.trim());
+        }
         let bookmark = BookmarkToInsert { url, name };
         diesel::insert_into(schema::bookmark::table)
             .values(&bookmark)
@@ -140,6 +149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .first::<Bookmark>(&conn)?;
 
         let mut tags: Vec<TagToInsert> = Vec::new();
+        let mut tags_input: String = String::new();
         if matches.is_present("tags") {
             for value in matches.values_of("tags").unwrap().collect::<Vec<&str>>() {
                 let ins = TagToInsert {
@@ -147,6 +157,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     bookmark_id: inserted_bookmark.id,
                 };
                 tags.push(ins);
+            }
+        } else {
+            io::stdout().write(b"Tags?\t")?;
+            io::stdout().flush()?;
+            io::stdin().read_line(&mut tags_input)?;
+            for tag_name in tags_input.split(',') {
+                tags.push(TagToInsert {
+                    value: String::from(tag_name.trim()),
+                    bookmark_id: inserted_bookmark.id,
+                })
             }
         }
         diesel::insert_into(schema::tag::table)
