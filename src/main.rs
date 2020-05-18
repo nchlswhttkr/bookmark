@@ -150,23 +150,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut tags: Vec<TagToInsert> = Vec::new();
         let mut tags_input: String = String::new();
+        // TODO Clean up this duplicated logic
         if matches.is_present("tags") {
             for value in matches.values_of("tags").unwrap().collect::<Vec<&str>>() {
-                let ins = TagToInsert {
-                    value: String::from(value),
-                    bookmark_id: inserted_bookmark.id,
-                };
-                tags.push(ins);
+                let trimmed = value.trim();
+                if trimmed.len() > 0 {
+                    tags.push(TagToInsert {
+                        value: String::from(trimmed),
+                        bookmark_id: inserted_bookmark.id,
+                    });
+                } else {
+                    eprintln!("Empty/whitespace tag ignored")
+                }
             }
         } else {
             io::stdout().write(b"Tags?\t")?;
             io::stdout().flush()?;
             io::stdin().read_line(&mut tags_input)?;
             for tag_name in tags_input.split(',') {
-                tags.push(TagToInsert {
-                    value: String::from(tag_name.trim()),
-                    bookmark_id: inserted_bookmark.id,
-                })
+                let trimmed = tag_name.trim();
+                if trimmed.len() > 0 {
+                    tags.push(TagToInsert {
+                        value: String::from(tag_name.trim()),
+                        bookmark_id: inserted_bookmark.id,
+                    })
+                } else {
+                    eprintln!("Empty/whitespace tag ignored")
+                }
             }
         }
         diesel::insert_into(schema::tag::table)
