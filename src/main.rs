@@ -284,7 +284,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         if cfg!(windows) {
             Command::new("cmd")
-                .args(vec!["/C", bookmark.url.as_str()])
+                .args(vec!["/C", "start", bookmark.url.as_str()])
                 .output()?;
         } else if cfg!(macos) {
             Command::new("open").args(vec![bookmark.url]).output()?;
