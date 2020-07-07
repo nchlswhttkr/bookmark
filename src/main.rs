@@ -282,16 +282,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .filter(schema::bookmark::url.eq(target))
                 .first(&conn)?;
         }
-        if cfg!(windows) {
+        if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .args(vec!["/C", "start", bookmark.url.as_str()])
                 .output()?;
-        } else if cfg!(macos) {
+        } else if cfg!(target_os = "macos") {
             Command::new("open").args(vec![bookmark.url]).output()?;
-        } else if cfg!(linux) {
+        } else if cfg!(target_os = "linux") {
             Command::new("xdg-open").args(vec![bookmark.url]).output()?;
         } else {
-            eprintln!("Could not open link in your browser")
+            eprintln!("Could not open bookmark, not implemented for your OS.")
         }
     }
     Ok(())
